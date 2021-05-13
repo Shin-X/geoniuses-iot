@@ -1,0 +1,8 @@
+# Project exclude paths
+/geoniuses-iot-core/target/
+/geoniuses-iot-protocol/geoniuses-iot-mqtt/target/
+/geoniuses-iot-protocol/geoniuses-iot-tcp/target/
+/geoniuses-iot-protocol/geoniuses-iot-udp/target/
+/geoniuses-iot-protocol/geoniuses-iot-websocket/target/
+/geoniuses-iot-web/target/
+.idea

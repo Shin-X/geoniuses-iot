@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.zydl.common.mapper.TransferMapper">
+
+    <select id="getTagBySensorNo" resultType="java.util.Map" parameterType="java.lang.String">
+        SELECT
+      s.big_industry_code,
+      s.big_industry_name,
+      s.mid_industry_code,
+      s.mid_industry_name,
+      s.min_industry_code,
+      s.min_industry_name,
+      c.station_key,
+      c.rangemax_value,
+      c.rangemin_value,
+      c.is_alarm,
+      c.level1_start,
+      c.level1_end,
+      c.level2_start,
+      c.level2_end,
+      c.level3_start,
+      c.level3_end,
+      c.dolow_warn,
+      c.low_level1_start,
+      c.low_level1_end,
+      c.low_level2_start,
+      c.low_level2_end,
+      c.low_level3_start,
+      c.low_level3_end,
+      c.order_num,
+      c.tenant_id,
+      c.tag_code,
+      c.tag_name,
+      c.units,
+      c.crt_user,
+      s.station_name,
+      s.station_key,
+      s.Z z,
+      s.X x,
+      s.Y y
+ FROM
+      iot_config c
+ LEFT JOIN iot_station s ON c.station_key = s.station_key
+      WHERE
+      c.is_delete = 0
+      AND s.is_delete = 0
+      AND c.sensor_code = #{sensorNo}
+    </select>
+
+    <update id="updateByTagCode" parameterType="java.util.Map">
+        UPDATE
+            iot_config
+        SET tag_value = #{monitorValue},state = #{state}, save_date = #{date}
+
+        WHERE tag_code = #{tag_code}
+
+        AND is_delete = 0
+    </update>
+    <update id="updateSaveDateByTagCode" parameterType="java.util.Map">
+        UPDATE iot_config SET state = #{state},   save_date = CURRENT_TIMESTAMP WHERE tag_code = #{tag_code} AND is_delete = 0
+    </update>
+
+
+    <!--    redis锁-->
+    <update id="updateBatchConfig" parameterType="java.util.Map">
+        <if test="updateMap!=null">
+            UPDATE iot_config SET
+            <choose>
+                <when test="updateMap.size() > 3">
+                    tag_value = #{updateMap.monitorValue},
+                    state = #{updateMap.state},
+                    save_date = #{updateMap.datetime}
+                </when>
+                <otherwise>
+                    state = #{updateMap.state},
+                    save_date = #{updateMap.datetime}
+                </otherwise>
+            </choose>
+            WHERE tag_code = #{updateMap.tag_code} AND is_delete = 0
+        </if>
+    </update>
+
+    <select id="getConfigBySensorNo" parameterType="java.lang.String" resultType="java.util.Map">
+        SELECT
+	        CONCAT(s.big_industry_code,s.mid_industry_code,s.min_industry_code) sub_station_key,
+	        c.station_key,
+	        c.rangemax_value,
+	        c.rangemin_value,
+	        c.is_alarm,
+	        c.tag_code,
+	        c.level1_start,
+	        c.level1_end,
+	        c.level2_start,
+	        c.level2_end,
+	        c.level3_start,
+            c.level3_end,
+            c.dolow_warn,
+            c.low_level1_start,
+            c.low_level1_end,
+            c.low_level2_start,
+            c.low_level2_end,
+            c.low_level3_start,
+            c.low_level3_end,
+            c.order_num,
+        	s.X,
+	        s.Y
+        FROM
+	        iot_config c
+        LEFT JOIN iot_station s ON c.station_key = s.station_key
+        WHERE
+	        c.is_delete = '0'
+        AND s.is_delete = '0'
+        AND c.tenant_id = #{tenantId}
+        AND c.sensor_code = #{sensorNo}
+    </select>
+    <select id="getConfigByStationKey" parameterType="java.lang.String" resultType="java.util.Map">
+        SELECT
+	        c.state,
+	        c.order_num,
+	        c.tag_code,
+	        c.sensor_code
+        FROM
+	        iot_config c
+        WHERE
+	        c.is_delete = '0'
+        AND c.tenant_id = #{tenantId}
+        AND c.station_key = #{stationKey}
+        AND c.sensor_code != #{sensor_code}
+        ORDER BY c.save_date DESC
+    </select>
+
+    <select id="getTransfer" resultType="java.util.Map">
+        SELECT
+            t.ip,
+            t.port,
+            p.protocol_code,
+            p.normal_form,
+            p.protocol_type
+        FROM
+            iot_protocol_conf pc
+                INNER JOIN iot_protocol p ON pc.protocol_id = p.id AND p.is_delete = 0
+                INNER JOIN iot_transfer t ON  pc.transfer_id = t.id AND t.is_delete = 0
+    </select>
+
+    <select id="existSensorNo" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT
+            count(1)
+        FROM
+            iot_sensor s
+        where
+            s.is_delete = '0'
+        AND s.sensor_code = #{sensor_code}
+    </select>
+</mapper>
